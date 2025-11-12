@@ -1,6 +1,6 @@
 const UserModel = require('../models/user-model')
 const bcrypt = require('bcrypt')
-const { v4: uuidv4 } = await import('uuid')
+const { v4: uuidv4 } = require('uuid');
 const mailService = require('./mail-service')
 const tokenService = require('./token-service')
 const UserDto = require('../dtos/user-dto')
