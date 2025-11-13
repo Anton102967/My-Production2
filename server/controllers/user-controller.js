@@ -3,7 +3,16 @@ const userService = require('../service/user-service')
 class UserController {
     async registration(req, res, next) {
         try {
-            const {email, password} = req.body;
+             let body = req.body;
+
+            if (typeof body === 'string') {
+                try {
+                    body = JSON.parse(body);
+                } catch (parseError) {
+                    return res.status(400).json({ message: 'Invalid request body. Expected JSON.' });
+                }
+            }
+            const { email, password } = body || {};
             const userData = await userService.registration(email, password);
             res.cookie('refreshToken', userData.refreshToken, {maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true});
             return res.json(userData);
