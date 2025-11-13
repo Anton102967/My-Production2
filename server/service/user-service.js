@@ -7,6 +7,10 @@ const UserDto = require('../dtos/user-dto')
 
 class UserService {
     async registration(email, password) {
+        if (!email || !password) {
+            throw new Error('Email and password are required');
+        }
+
         const candidate = await UserModel.findOne({email});
         if(candidate) {
             throw new Error(`Пользователь с данными ${email} уже существует`)
@@ -18,7 +22,7 @@ class UserService {
         await mailService.sendActivationMail(email, activationLink);
 
         const userDto = new UserDto(user)
-        const tokens = tokenService.generateTokens(...userDto);
+        const tokens = tokenService.generateTokens({ ...userDto });
         await tokenService.saveToken(userDto.id, tokens.refreshToken);
 
         return {
