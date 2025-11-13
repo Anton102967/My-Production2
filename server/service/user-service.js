@@ -1,35 +1,36 @@
-const UserModel = require('../models/user-model')
-const bcrypt = require('bcrypt')
+const UserModel = require('../models/user-model');
+const bcrypt = require('bcrypt');
 const { v4: uuidv4 } = require('uuid');
-const mailService = require('./mail-service')
-const tokenService = require('./token-service')
-const UserDto = require('../dtos/user-dto')
+const mailService = require('./mail-service');
+const tokenService = require('./token-service');
+const UserDto = require('../dtos/user-dto');
 
 class UserService {
     async registration(email, password) {
-        if (!email || !password) {
-            throw new Error('Email and password are required');
+        const candidate = await UserModel.findOne({ email });
+        if (candidate) {
+            throw new Error(`Пользователь с данными ${email} уже существует`);
         }
 
-        const candidate = await UserModel.findOne({email});
-        if(candidate) {
-            throw new Error(`Пользователь с данными ${email} уже существует`)
-        }
         const hashPassword = await bcrypt.hash(password, 3);
         const activationLink = uuidv4();
 
-        const user = await UserModel.create({email, password: hashPassword, activationLink});
-        await mailService.sendActivationMail(email, `${process.env.API_URL}/api/activate/${activationLink}`);
+        const user = await UserModel.create({ email, password: hashPassword, activationLink });
 
-        const userDto = new UserDto(user)
+        await mailService.sendActivationMail(
+            email,
+            `${process.env.API_URL}/api/activate/${activationLink}`
+        );
+
+        const userDto = new UserDto(user); // { id, email, isActivated }
         const tokens = tokenService.generateTokens({ ...userDto });
         await tokenService.saveToken(userDto.id, tokens.refreshToken);
 
         return {
             ...tokens,
-            user: userDto
-        }
+            user: userDto,
+        };
     }
 }
 
-module.exports = new UserService();
+module.exports = new UserService();  // 🔴 ВАЖНО: именно ЭКЗЕМПЛЯР, а не класс
